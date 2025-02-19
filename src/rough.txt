@@ -1,0 +1,364 @@
+import { Ban, Loader, SendHorizontal, Volume2 } from "lucide-react";
+import ISO6391 from "iso-639-1";
+import { useState } from "react";
+import SelectDropDown from "./components/ui/SelectDropdown";
+
+function App() {
+  // Text State
+  const [text, setText] = useState("");
+  const [displayedText, setDisplayedText] = useState("");
+
+  // Summary State
+  const [summary, setSummary] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const [language, setLanguage] = useState("en");
+  const [detectionState, setDetectionState] = useState({
+    loading: false,
+    result: null,
+    canDetect: null,
+  });
+
+  //Translation State
+  const [translation, setTranslation] = useState("");
+  const [translationLoading, setTranslationLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const detectLanguage = async (text) => {
+    setDetectionState((prev) => ({
+      ...prev,
+      loading: true,
+    }));
+    setText("");
+    const languageDetectorCapabilities =
+      await self.ai.languageDetector.capabilities();
+    const canDetect = languageDetectorCapabilities.capabilities;
+    let detector;
+    if (canDetect === "no") {
+      // The language detector isn't usable.
+      setDetectionState((prev) => ({
+        ...prev,
+        loading: canDetect,
+      }));
+      return;
+    }
+    if (canDetect === "readily") {
+      // The language detector can immediately be used.
+      detector = await self.ai.languageDetector.create();
+      setDetectionState((prev) => ({
+        ...prev,
+        canDetect: canDetect,
+      }));
+    } else {
+      // The language detector can be used after model download.
+      detector = await self.ai.languageDetector.create({
+        monitor(m) {
+          m.addEventListener("downloadprogress", (e) => {
+            console.log(`Downloaded ${e.loaded} of ${e.total} bytes.`);
+          });
+        },
+      });
+      await detector.ready;
+      setDetectionState((prev) => ({
+        ...prev,
+        canDetect: canDetect,
+      }));
+    }
+
+    // const someUserText = text;
+    const [results] = await detector.detect(text);
+    const { detectedLanguage, confidence } = results;
+    setDetectionState((prev) => ({
+      ...prev,
+      result: {
+        language: ISO6391.getName(detectedLanguage),
+        languageAbbreviation: detectedLanguage,
+        confidence: (confidence * 100).toFixed(2),
+      },
+      loading: false,
+    }));
+  };
+
+  const handleSubmit = () => {
+    if (!text) {
+      return;
+    }
+    setSummary("");
+    setTranslation("");
+    setDisplayedText(text);
+    detectLanguage(text);
+  };
+
+  const translateHandler = async (passedText) => {
+    console.log(language, passedText);
+    setTranslationLoading(true);
+    try {
+      const translator = await self.ai.translator.create({
+        sourceLanguage: detectionState.result.languageAbbreviation || "en",
+        targetLanguage: language,
+      });
+      if (translator && passedText) {
+        const translation = await translator.translate(passedText);
+        setTranslation(translation);
+        setError("");
+        setTranslationLoading(false);
+      }
+    } catch (error) {
+      console.error("Translation Error:", error);
+      setTranslationLoading(false);
+      setError(error.message || "Translation failed. Please try again.");
+    }
+  };
+
+  const summarizeText = async () => {
+    setSummaryLoading(true);
+    const options = {
+      sharedContext: "This is a scientific article",
+      type: "teaser",
+      format: "markdown",
+      length: "short",
+    };
+
+    const available = (await self.ai.summarizer.capabilities()).available;
+    let summarizer;
+    if (available === "no") {
+      // The Summarizer API isn't usable.
+      return;
+    }
+    if (available === "readily") {
+      // The Summarizer API can be used immediately .
+      summarizer = await self.ai.summarizer.create(options);
+    } else {
+      // The Summarizer API can be used after the model is downloaded.
+      summarizer = await self.ai.summarizer.create(options);
+      summarizer.addEventListener("downloadprogress", (e) => {
+        console.log(e.loaded, e.total);
+      });
+      await summarizer.ready;
+    }
+
+    if (summarizer && displayedText) {
+      console.log(displayedText);
+      try {
+        const summary = await summarizer.summarize(displayedText, {
+          context: "This article is intended for a tech-savvy audience.",
+        });
+        setSummary(summary);
+        setSummaryLoading(false);
+      } catch (error) {
+        setError(error.message);
+        setSummaryLoading(false);
+      }
+    }
+  };
+
+  const handleSummarize = async () => {
+    setError("");
+    setSummary("");
+    setTranslation("");
+    summarizeText();
+  };
+
+  const speakText = (text, speechLanguage) => {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = speechLanguage;
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setError("Text-to-Speech is not supported in your browser.");
+    }
+  };
+
+  const normalizeLanguageCode = (lang) => {
+    const languageMap = {
+      en: "en-US",
+      fr: "fr-FR",
+      es: "es-ES",
+      de: "de-DE",
+      zh: "zh-CN",
+      ig: "ig",
+      yo: "yo",
+      ha: "ha",
+    };
+
+    return languageMap[lang] || lang; // Default to input if no match
+  };
+
+  return (
+    <>
+      <section className="bg-[#0f0f10] dark:bg-[#0f0f10] text-[#e1e4e8] dark:text-[#e1e4e8] min-h-screen flex flex-col justify-center items-center w-full px-4 pb-0 pt-10">
+        <div className="w-[90%] max-w-[800px] mx-auto relative">
+          <div className="w-full px-4 pb-96 flex flex-col">
+            {!displayedText && (
+              <h1 className="text-center text-lg lg:text-2xl font-bold mb-10">
+                Ai Powered Language Processor
+                <p>what can i help you with?</p>
+              </h1>
+            )}
+
+            {/* chat */}
+            {displayedText && (
+              <div className="self-end">
+                <p className="shadow-sm bg-[#1c1c2247] p-4 rounded-xl w-full max-w-[400px] relative pb-12">
+                  <span>{displayedText}</span>
+                  <span
+                    className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2 cursor-pointer"
+                    onClick={() =>
+                      speakText(
+                        displayedText,
+                        normalizeLanguageCode(
+                          detectionState?.result
+                            ? detectionState?.result?.language
+                            : "en"
+                        )
+                      )
+                    }
+                  >
+                    {detectionState?.result
+                      ? detectionState?.result?.language
+                      : ""}
+                    <Volume2 className="text-[#e1e4e8] dark:text-[#e1e4e8]" />
+                  </span>
+                </p>
+                <div className="flex items-center gap-2 py-5">
+                  {displayedText.length > 150 ? (
+                    <button
+                      className="flex items-center justify-center gap-2 border border-gray-300 outline-none focus-within:outline-0 rounded-lg py-2 px-4 text-[#0f0f10] dark:text-[#0f0f10] bg-[#e1e4e8] dark:bg-[#e1e4e8]text-lg cursor-pointer disabled:opacity-20"
+                      disabled={summaryLoading}
+                      onClick={() => {
+                        handleSummarize();
+                        setLanguage("en");
+                      }}
+                    >
+                      {summaryLoading && (
+                        <Loader className="animate-spin w-5 h-5" />
+                      )}
+                      Summarize
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <SelectDropDown
+                        aria-labelledby="language-label"
+                        defaultValue={"en"}
+                        value={language || "en"}
+                        onChange={(value) => {
+                          setLanguage(value);
+                          setError("");
+                          setTranslation("");
+                        }}
+                      />
+                      <button
+                        onClick={() => translateHandler(displayedText)}
+                        disabled={!displayedText || error || summaryLoading}
+                        className="flex items-center justify-center gap-2 border border-gray-300 outline-none focus-within:outline-0 rounded-lg py-2 px-4 text-[#0f0f10] dark:text-[#0f0f10] bg-[#e1e4e8] dark:bg-[#e1e4e8]text-lg cursor-pointer disabled:opacity-20"
+                      >
+                        {translationLoading && (
+                          <Loader className="animate-spin w-5 h-5" />
+                        )}
+                        Translate
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {summary && (
+              <div className="self-start">
+                <h1 className=" text-lg font-bold mb-2">Text Summary:</h1>
+                <p className="shadow-sm bg-[#1c1c2247] p-4 rounded-xl w-full max-w-[400px] relative mb-2">
+                  <span>{summary}</span>
+                  <span
+                    className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2 cursor-pointer"
+                    onClick={() => speakText(summary, "en-US")}
+                  >
+                    <Volume2 className="text-[#e1e4e8] dark:text-[#e1e4e8]" />
+                  </span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <SelectDropDown
+                    aria-labelledby="language-label"
+                    defaultValue={"en"}
+                    value={language || "en"}
+                    onChange={(value) => {
+                      setLanguage(value);
+                      setError("");
+                      setTranslation("");
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      translateHandler(summary);
+                    }}
+                    disabled={!displayedText || error || summaryLoading}
+                    className="flex items-center justify-center gap-2 border border-gray-300 outline-none focus-within:outline-0 rounded-lg py-2 px-4 text-[#0f0f10] dark:text-[#0f0f10] bg-[#e1e4e8] dark:bg-[#e1e4e8]text-lg cursor-pointer disabled:opacity-20"
+                  >
+                    {translationLoading && (
+                      <Loader className="animate-spin w-5 h-5" />
+                    )}
+                    Translate
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {translation && (
+              <div className="self-start mt-5">
+                <h1 className=" text-lg font-bold mb-2">Text Translation:</h1>
+
+                <p className="shadow-sm bg-[#1c1c2247] p-4 rounded-xl w-full max-w-[400px] relative pb-12">
+                  <span>{translation}</span>
+                  <span
+                    className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2 cursor-pointer"
+                    onClick={() =>
+                      speakText(translation, normalizeLanguageCode(language))
+                    }
+                  >
+                    {ISO6391.getName(language)}
+                    <Volume2 className="text-[#e1e4e8] dark:text-[#e1e4e8]" />
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="h-fit fixed bottom-0 bg-[#0f0f10] dark:bg-[#0f0f10] pb-10 left-1/2 -translate-x-1/2 w-[90%] max-w-[800px] mx-auto">
+            {error && (
+              <div className="absolute -top-[70%] md:-top-[60%] h-fit text-red-500 bg-red-100 p-3 rounded-md mt-4 w-full max-w-[400px] mb-96 flex items-start gap-2">
+                <Ban className="text-red-500" />
+                {error}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-6 relative shadow-sm bg-[#1c1c2247] p-4 rounded-xl">
+              <textarea
+                name="text"
+                id="text"
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setError("");
+                }}
+                placeholder="Type your message here..."
+                className="outline-none focus-within:outline-0 rounded-lg p-2 text-[#e1e4e8] dark:text-[#e1e4e8] w-full border-0 resize-none bg-transparent h-[30px] lg:h-[50px]"
+              ></textarea>
+              <button
+                disabled={!text}
+                onClick={handleSubmit}
+                className="flex items-center justify-center gap-2 border border-gray-300 outline-none focus-within:outline-0 rounded-lg h-10 w-10 text-[#0f0f10] dark:text-[#0f0f10] bg-[#e1e4e8] dark:bg-[#e1e4e8]text-lg cursor-pointer disabled:opacity-20"
+              >
+                {detectionState.loading ? (
+                  <Loader className="animate-spin w-5 h-5 text-[#0f0f10] dark:text-[#0f0f10]" />
+                ) : (
+                  <SendHorizontal className="w-5 h-5 text-[#0f0f10] dark:text-[#0f0f10]" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+export default App;
