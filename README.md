@@ -70,11 +70,4 @@ Right below the text,
 - Use modular, readable code with proper comments and structure.
 - Implement async/await or Promises for API calls and error handling.
 
-**\_Submission Mode
-Submit your task using the submission form. Ensure you’ve:
-Hosted the application on a platform of your choice (e.g., Vercel, Netlify, GitHub Pages).
-Provided the hosted page URL and GitHub repository link in the submission form.
-Verified the functionality, responsiveness, and accessibility of your app.
-Submission Deadline
-The deadline for submission is Friday 21st Feb 2025, 11:59 PM WAT. Late submissions will not be accepted.
-Good luck, and happy coding!**\_
+
