@@ -105,7 +105,8 @@ const LanguageProcessor = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-2 py-5">
-                {state.displayedText.length > 150 ? (
+                {state.displayedText.length > 150 &&
+                state.detection.result?.abbreviation === "en" ? (
                   <div className="flex items-center gap-2">
                     <button
                       className="border border-gray-300 rounded-lg py-2 px-4 bg-[#e1e4e8] text-[#0f0f10] cursor-pointer flex items-center gap-2 h-10 hover:scale-[1.05] transition duration-300 ease-in-out disabled:opacity-20 disabled:hover:scale-100"
