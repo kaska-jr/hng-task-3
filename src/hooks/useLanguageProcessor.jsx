@@ -29,32 +29,43 @@ export const useLanguageProcessor = () => {
 
   // Detect Language function
   const detectLanguage = async (text) => {
-    setState((prev) => ({
-      ...prev,
-      detection: { ...prev.detection, loading: true },
-    }));
-    const { capabilities } = await self.ai.languageDetector.capabilities();
-
-    if (capabilities === "no")
-      return setState((prev) => ({
+    try {
+      setState((prev) => ({
         ...prev,
-        detection: { ...prev.detection, loading: false },
+        detection: { ...prev.detection, loading: true },
       }));
+      const { capabilities } = await self.ai.languageDetector.capabilities();
 
-    const detector = await self.ai.languageDetector.create();
-    const [{ detectedLanguage, confidence }] = await detector.detect(text);
+      if (capabilities === "no")
+        return setState((prev) => ({
+          ...prev,
+          detection: { ...prev.detection, loading: false },
+        }));
 
-    setState((prev) => ({
-      ...prev,
-      detection: {
-        loading: false,
-        result: {
-          language: ISO6391.getName(detectedLanguage),
-          abbreviation: detectedLanguage,
-          confidence: `${(confidence * 100).toFixed(2)}%`,
+      const detector = await self.ai.languageDetector.create();
+      const [{ detectedLanguage, confidence }] = await detector.detect(text);
+
+      setState((prev) => ({
+        ...prev,
+        detection: {
+          loading: false,
+          result: {
+            language: ISO6391.getName(detectedLanguage),
+            abbreviation: detectedLanguage,
+            confidence: `${(confidence * 100).toFixed(2)}%`,
+          },
         },
-      },
-    }));
+      }));
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: error.message || "Detection failed.",
+        detection: {
+          loading: false,
+        },
+      }));
+      console.log(error, "Detection Error");
+    }
   };
 
   // Translate Text function
@@ -77,6 +88,7 @@ export const useLanguageProcessor = () => {
         error: error.message || "Translation failed.",
         translationLoading: false,
       }));
+      console.log(error, "Translation Error");
     }
   };
 
@@ -98,9 +110,10 @@ export const useLanguageProcessor = () => {
     } catch (error) {
       setState((prev) => ({
         ...prev,
-        error: error.message,
+        error: error.message || "summarizing Failed",
         summaryLoading: false,
       }));
+      console.log(error, "summarizing Error");
     }
   };
 
