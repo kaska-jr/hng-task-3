@@ -34,6 +34,20 @@ export const useLanguageProcessor = () => {
         ...prev,
         detection: { ...prev.detection, loading: true },
       }));
+
+      if (!self?.ai?.languageDetector) {
+        console.warn(
+          "Language detection is not available or not supported in this environment"
+        );
+        setState((prev) => ({
+          ...prev,
+          detection: { ...prev.detection, loading: false },
+          error:
+            "Language detection is not available or not supported in this environment",
+        }));
+        return;
+      }
+
       const { capabilities } = await self.ai.languageDetector.capabilities();
 
       if (capabilities === "no")
@@ -72,6 +86,15 @@ export const useLanguageProcessor = () => {
   const translateText = async (text) => {
     setState((prev) => ({ ...prev, translationLoading: true }));
     try {
+      if (!self.ai?.translator) {
+        setState((prev) => ({
+          ...prev,
+          translationLoading: false,
+          error:
+            "Translator service is unavailable or not supported in this environment.",
+        }));
+        throw new Error("Translator service is unavailable.");
+      }
       const translator = await self.ai.translator.create({
         sourceLanguage: state.detection.result?.abbreviation || "en",
         targetLanguage: state.language,
@@ -95,6 +118,17 @@ export const useLanguageProcessor = () => {
   // Summarize Text function
   const summarizeText = async () => {
     setState((prev) => ({ ...prev, summaryLoading: true }));
+
+    if (!self.ai?.summarizer) {
+      setState((prev) => ({
+        ...prev,
+        summaryLoading: false,
+        error:
+          "Summarizer service is unavailable or not supported in this environment.",
+      }));
+      throw new Error("Summarizer service is unavailable.");
+    }
+
     const summarizer = await self.ai.summarizer.create({
       type: "teaser",
       length: "short",
