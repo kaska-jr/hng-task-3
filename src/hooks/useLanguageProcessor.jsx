@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ISO6391 from "iso-639-1";
+import { handleScrollToBottom } from "../utils/helpers";
 
 export const useLanguageProcessor = () => {
   const [state, setState] = useState({
@@ -12,6 +13,8 @@ export const useLanguageProcessor = () => {
     translation: "",
     translationLoading: false,
     error: "",
+    downloading: false,
+    downloadState: "",
   });
 
   // Normalize Language Code for Speech
@@ -36,40 +39,77 @@ export const useLanguageProcessor = () => {
       }));
 
       if (!self?.ai?.languageDetector) {
-        console.warn(
-          "Language detection is not available or not supported in this environment"
-        );
         setState((prev) => ({
           ...prev,
           detection: { ...prev.detection, loading: false },
           error:
-            "Language detection is not available or not supported in this environment",
+            "Language detection is not available or not supported in this environment, Click on the help to read more",
         }));
         return;
       }
 
       const { capabilities } = await self.ai.languageDetector.capabilities();
 
-      if (capabilities === "no")
-        return setState((prev) => ({
+      let detector;
+      if (capabilities === "no") {
+        // The language detector isn't usable.
+        setState((prev) => ({
           ...prev,
           detection: { ...prev.detection, loading: false },
+          error:
+            "The language detector isn't usable. Click on the help to read more",
+        }));
+        return;
+      }
+
+      if (capabilities === "readily") {
+        detector = await self.ai.languageDetector.create();
+        const [{ detectedLanguage, confidence }] = await detector.detect(text);
+
+        setState((prev) => ({
+          ...prev,
+          detection: {
+            loading: false,
+            result: {
+              language: ISO6391.getName(detectedLanguage),
+              abbreviation: detectedLanguage,
+              confidence: `${(confidence * 100).toFixed(2)}%`,
+            },
+          },
+        }));
+      } else {
+        // The language detector can be used after model download.
+        setState((prev) => ({
+          ...prev,
+          downloading: true,
         }));
 
-      const detector = await self.ai.languageDetector.create();
-      const [{ detectedLanguage, confidence }] = await detector.detect(text);
-
-      setState((prev) => ({
-        ...prev,
-        detection: {
-          loading: false,
-          result: {
-            language: ISO6391.getName(detectedLanguage),
-            abbreviation: detectedLanguage,
-            confidence: `${(confidence * 100).toFixed(2)}%`,
+        detector = await self.ai.languageDetector.create({
+          monitor(m) {
+            m.addEventListener("downloadprogress", (e) => {
+              setState((prev) => ({
+                ...prev,
+                downloadState: `(${(e.loaded / e.total) * 100}%) Downloaded ${
+                  e.loaded
+                } of ${e.total} bytes.`,
+              }));
+            });
           },
-        },
-      }));
+        });
+        const [{ detectedLanguage, confidence }] = await detector.detect(text);
+        setState((prev) => ({
+          ...prev,
+          detection: {
+            loading: false,
+            result: {
+              language: ISO6391.getName(detectedLanguage),
+              abbreviation: detectedLanguage,
+              confidence: `${(confidence * 100).toFixed(2)}%`,
+            },
+          },
+          downloading: false,
+        }));
+      }
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -91,9 +131,11 @@ export const useLanguageProcessor = () => {
           ...prev,
           translationLoading: false,
           error:
-            "Translator service is unavailable or not supported in this environment.",
+            "Translator service is unavailable or not supported in this environment. Click on the help to read more",
         }));
-        throw new Error("Translator service is unavailable.");
+        throw new Error(
+          "Translator service is unavailable. Click on the help to read more"
+        );
       }
       const translator = await self.ai.translator.create({
         sourceLanguage: state.detection.result?.abbreviation || "en",
@@ -105,6 +147,7 @@ export const useLanguageProcessor = () => {
         translation: translatedText,
         translationLoading: false,
       }));
+      setTimeout(() => handleScrollToBottom(), 500);
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -124,7 +167,7 @@ export const useLanguageProcessor = () => {
         ...prev,
         summaryLoading: false,
         error:
-          "Summarizer service is unavailable or not supported in this environment.",
+          "Summarizer service is unavailable or not supported in this environment. Click on the help to read more",
       }));
       throw new Error("Summarizer service is unavailable.");
     }
@@ -141,6 +184,7 @@ export const useLanguageProcessor = () => {
         context: "Tech audience",
       });
       setState((prev) => ({ ...prev, summary, summaryLoading: false }));
+      setTimeout(() => handleScrollToBottom(), 500);
     } catch (error) {
       setState((prev) => ({
         ...prev,

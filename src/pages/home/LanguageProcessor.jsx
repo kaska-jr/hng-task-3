@@ -56,6 +56,12 @@ const LanguageProcessor = () => {
             </span>
           )}
 
+          {state.downloading && state.downloadState && (
+            <span className="h-fit w-fit text-green-500 bg-red-100 p-3 rounded-md mt-4 px-2 py-1 fixed top-6 right-0 left-0 mx-auto">
+              {state.downloadState}
+            </span>
+          )}
+
           {/* Initial Text */}
           {!state.displayedText && (
             <div className="text-center">
@@ -79,7 +85,7 @@ const LanguageProcessor = () => {
           {state.displayedText && (
             <div className="self-end">
               <p className="bg-[#1c1c2247] p-4 rounded-xl max-w-[400px] relative pb-12">
-                {state.displayedText}
+                <span className="text-sm">{state.displayedText}</span>
                 <div className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2">
                   <Clipboard
                     className="text-[#e1e4e8] w-4 h-4 cursor-pointer"
@@ -193,7 +199,7 @@ const LanguageProcessor = () => {
             <div className="self-start">
               <h1 className="text-lg font-bold mb-2">Text Summary:</h1>
               <p className="bg-[#1c1c2247] p-4 rounded-xl max-w-[400px] relative pb-10">
-                {state.summary}
+                <span className="text-sm">{state.summary}</span>
 
                 <div className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2">
                   <Clipboard
@@ -253,7 +259,7 @@ const LanguageProcessor = () => {
               <h1 className=" text-lg font-bold mb-2">Text Translation:</h1>
 
               <p className="shadow-sm bg-[#1c1c2247] p-4 rounded-xl w-full max-w-[400px] relative pb-12">
-                <span>{state.translation}</span>
+                <span className="text-sm">{state.translation}</span>
 
                 <div className="absolute bottom-0 right-0 px-2 py-2 flex items-center gap-2">
                   <Clipboard
