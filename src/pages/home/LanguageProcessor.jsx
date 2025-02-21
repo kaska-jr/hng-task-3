@@ -286,8 +286,8 @@ const LanguageProcessor = () => {
 
         <div className="h-fit fixed bottom-0 bg-[#0f0f10] dark:bg-[#0f0f10] pb-10 left-1/2 -translate-x-1/2 w-[90%] max-w-[800px] mx-auto">
           {state.error && (
-            <div className="absolute -top-[60%] md:-top-[60%] h-fit text-red-500 bg-red-100 p-3 rounded-md mt-4 w-full max-w-[400px] mb-96 flex items-start gap-2">
-              <Ban className="text-red-500" />
+            <div className="absolute -top-[60%] md:-top-[60%] h-fit text-red-500 bg-red-100 p-3 rounded-md mt-4 w-full max-w-[400px] mb-96 flex items-start gap-2 text-xs">
+              <Ban className="text-red-500 w-4 h-5 flex-shrink-0" />
               {state.error}
             </div>
           )}

@@ -134,7 +134,7 @@ export const useLanguageProcessor = () => {
             "Translator service is unavailable or not supported in this environment. Click on the help to read more",
         }));
         throw new Error(
-          "Translator service is unavailable. Click on the help to read more"
+          "Translator service is unavailable or not supported in this environment. Click on the help to read more"
         );
       }
       const translator = await self.ai.translator.create({
