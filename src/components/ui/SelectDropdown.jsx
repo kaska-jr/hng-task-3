@@ -36,7 +36,7 @@ const SelectDropDown = ({ onChange, value, isError, defaultValue }) => (
             <SelectItem value="pt">Portuguese</SelectItem>
             <SelectItem value="ru">Russia</SelectItem>
             <SelectItem value="tr">Turkish</SelectItem>
-            <SelectItem value="zh">Chinese</SelectItem>
+            {/* <SelectItem value="zh">Chinese</SelectItem> */}
           </Select.Group>
         </Select.Viewport>
         <Select.ScrollDownButton className="SelectScrollButton">

@@ -113,7 +113,9 @@ const Help = () => {
             </li>
             <li className="flex gap-2 flex-col md:flex-row">
               <span className="font-semibold text-[#f0f0f0] w-44">Step 2:</span>
-              <span className="text-gray-400 flex-1">Select Enabled</span>
+              <span className="text-gray-400 flex-1">
+                Select Enabled without language pack limit
+              </span>
             </li>
             <li className="flex gap-2 flex-col md:flex-row">
               <span className="font-semibold text-[#f0f0f0] w-44">Step 3:</span>

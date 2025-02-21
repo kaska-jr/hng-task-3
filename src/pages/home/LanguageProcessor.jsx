@@ -66,7 +66,7 @@ const LanguageProcessor = () => {
           {!state.displayedText && (
             <div className="text-center">
               <h1 className="text-center text-lg lg:text-2xl font-bold mb-5">
-                AI-Powered Text Processor
+                AI-Powered Word Processor
               </h1>
               <p className="text-center text-lg font-bold mb-10">
                 Enter a text to detect, translate, and summarize.
