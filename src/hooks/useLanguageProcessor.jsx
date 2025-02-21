@@ -43,7 +43,7 @@ export const useLanguageProcessor = () => {
           ...prev,
           detection: { ...prev.detection, loading: false },
           error:
-            "Language detection is not available or not supported in this environment, Click on the help to read more",
+            "Language detection is not available or not supported in this environment, Click on help above to read more",
         }));
         return;
       }
@@ -57,7 +57,7 @@ export const useLanguageProcessor = () => {
           ...prev,
           detection: { ...prev.detection, loading: false },
           error:
-            "The language detector isn't usable. Click on the help to read more",
+            "The language detector isn't usable. Click on help above to read more",
         }));
         return;
       }
@@ -131,10 +131,10 @@ export const useLanguageProcessor = () => {
           ...prev,
           translationLoading: false,
           error:
-            "Translator service is unavailable or not supported in this environment. Click on the help to read more",
+            "Translator service is unavailable or not supported in this environment. Click on help above to read more",
         }));
         throw new Error(
-          "Translator service is unavailable or not supported in this environment. Click on the help to read more"
+          "Translator service is unavailable or not supported in this environment. Click on help above to read more"
         );
       }
       const translator = await self.ai.translator.create({
@@ -167,7 +167,7 @@ export const useLanguageProcessor = () => {
         ...prev,
         summaryLoading: false,
         error:
-          "Summarizer service is unavailable or not supported in this environment. Click on the help to read more",
+          "Summarizer service is unavailable or not supported in this environment. Click on help above to read more",
       }));
       throw new Error("Summarizer service is unavailable.");
     }
